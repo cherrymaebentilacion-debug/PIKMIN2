@@ -1,0 +1,519 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pikmin English Garden - Infinite Curriculum Builder</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #f3efe0;
+            --earth-brown: #6d4c41;
+            --leaf-green: #4caf50;
+            --soft-cream: #faf8f5;
+            --text-dark: #3e2723;
+            --accent-blue: #29b6f6;
+        }
+
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); color: var(--text-dark); padding: 20px; min-height: 100vh; }
+        
+        .container { max-width: 850px; margin: 0 auto; background: var(--soft-cream); border: 4px solid var(--earth-brown); border-radius: 30px; padding: 30px; box-shadow: 0 10px 0px rgba(62, 39, 35, 0.15); }
+        h1 { text-align: center; color: var(--earth-brown); margin-bottom: 20px; }
+        p.subtitle { text-align: center; color: #795548; font-style: italic; margin-bottom: 30px; }
+
+        /* Setup Configuration Box */
+        .grade-config-box { text-align: center; margin-bottom: 25px; background: #fff; padding: 20px; border: 2px solid var(--earth-brown); border-radius: 15px; display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; align-items: center; }
+        .config-input { font-size: 1.1rem; padding: 8px 12px; border-radius: 8px; border: 2px solid var(--earth-brown); font-weight: bold; }
+        .grade-select { font-size: 1.1rem; padding: 8px 12px; border-radius: 8px; border: 2px solid var(--earth-brown); font-weight: bold; color: var(--earth-brown); background: white; cursor: pointer; }
+
+        /* Dynamic Blocks Wrapper */
+        .master-unit-wrapper { background: #d7ccc8; padding: 15px; border-radius: 25px; margin-bottom: 25px; border: 2px solid var(--earth-brown); }
+        .unit-section { background: #efebe9; border: 2px dashed var(--earth-brown); border-radius: 20px; padding: 20px; margin-bottom: 15px; position: relative; }
+        .unit-title { font-size: 1.3rem; font-weight: bold; color: var(--earth-brown); margin-bottom: 15px; border-bottom: 3px solid var(--leaf-green); display: inline-block; }
+        
+        /* Input Rows with Instant Paste Dropzones */
+        .entry-row { display: flex; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; background: rgba(255,255,255,0.6); padding: 10px; border-radius: 12px; align-items: center; border: 1px solid #d7ccc8; }
+        .input-word { flex: 2; padding: 12px; border: 2px solid #b0bec5; border-radius: 8px; font-size: 1rem; min-width: 150px; }
+        .input-phonics-only { flex: 1; padding: 12px; border: 2px solid #b0bec5; border-radius: 8px; font-size: 1.1rem; }
+        
+        /* Paste Boxes */
+        .image-paste-zone { flex: 3; min-width: 220px; height: 50px; background: #fff; border: 2px dashed #a1887f; border-radius: 8px; display: flex; align-items: center; justify-content: center; position: relative; cursor: pointer; overflow: hidden; font-size: 0.85rem; color: #795548; font-weight: 500; transition: background 0.2s; }
+        .image-paste-zone:hover { background: #f5f5f5; border-color: var(--earth-brown); }
+        .image-paste-zone img { max-height: 100%; max-width: 100%; object-fit: contain; }
+        .hidden-file-input { display: none; }
+
+        .btn-add { background: #81c784; color: white; border: 2px solid #388e3c; border-radius: 10px; padding: 8px 15px; cursor: pointer; font-weight: bold; margin-bottom: 5px; }
+        .btn-global-builder { background: #29b6f6; color: white; border: 3px solid #0288d1; border-radius: 20px; font-size: 1.2rem; padding: 12px 25px; cursor: pointer; font-weight: bold; width: 100%; margin-bottom: 25px; box-shadow: 0 4px 0 #0288d1; }
+        .btn-global-builder:active { transform: translateY(2px); box-shadow: none; }
+        
+        /* QR Output Hub */
+        .save-zone { background: #e3f2fd; border: 3px solid var(--accent-blue); border-radius: 20px; padding: 25px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+        .btn-save { background: var(--leaf-green); color: white; font-size: 1.3rem; padding: 12px 40px; border: 3px solid #2e7d32; border-radius: 30px; cursor: pointer; font-weight: bold; box-shadow: 0 5px 0 #1b5e20; width: 100%; max-width: 350px; }
+        .btn-save:active { transform: translateY(4px); box-shadow: none; }
+        
+        #qr-display-box { background: white; padding: 20px; border: 4px solid var(--earth-brown); border-radius: 20px; display: none; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .scan-instructions { font-size: 1.2rem; color: #2e7d32; font-weight: bold; display: none; }
+        .qr-grade-label { font-size: 1.4rem; color: #d84315; font-weight: bold; display: none; margin-top: 5px; }
+
+        /* Game Boards Layout */
+        .garden-container { display: flex; justify-content: space-around; flex-wrap: wrap; gap: 15px; margin-top: 20px; }
+        .pot-card { background: white; border: 3px solid var(--earth-brown); border-radius: 20px; padding: 20px; text-align: center; width: 190px; cursor: pointer; box-shadow: 0 6px 0 var(--earth-brown); transition: transform 0.1s; }
+        .pot-card:active { transform: translateY(4px); box-shadow: none; }
+        .pot-art { width: 65px; height: 45px; background: #d84315; border: 3px solid var(--earth-brown); border-radius: 5px 5px 25px 25px; margin: 15px auto; }
+        .quiz-card { background: white; border: 3px solid var(--earth-brown); border-radius: 20px; padding: 25px; text-align: center; margin-top: 15px; }
+        
+        /* Interactive Play Items */
+        .option-btn { display: block; width: 100%; background: #fff; border: 2px solid var(--earth-brown); border-radius: 15px; padding: 15px; font-size: 1.2rem; margin-bottom: 10px; text-align: left; cursor: pointer; }
+        .choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
+        .img-choice-btn { background: white; border: 3px solid var(--earth-brown); border-radius: 20px; padding: 10px; cursor: pointer; transition: transform 0.1s; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 160px; box-shadow: 0 5px 0 var(--earth-brown); }
+        .img-choice-btn:active { transform: translateY(3px); box-shadow: none; }
+        .img-choice-btn img { max-width: 100%; max-height: 120px; object-fit: contain; border-radius: 10px; }
+        
+        .flashcard-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px; }
+        .game-photo { width: 100px; height: 100px; object-fit: contain; border-radius: 10px; margin-bottom: 8px; background: #f5f5f5; padding: 5px; }
+        .sentence-display-box { background: #fffde7; border: 2px solid #fbc02d; padding: 20px; border-radius: 15px; margin-bottom: 15px; font-size: 1.4rem; font-weight: bold; text-align: center; color: #f57f17; min-height: 80px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; }
+        .sentence-display-box img { max-height: 140px; max-width: 100%; object-fit: contain; border-radius: 10px; }
+        .audio-btn { background: var(--accent-blue); color: white; border: none; border-radius: 50%; width: 60px; height: 60px; font-size: 1.5rem; cursor: pointer; margin-bottom: 15px; box-shadow: 0 4px 0 #0288d1; }
+        .audio-btn:active { transform: translateY(2px); box-shadow: none; }
+    </style>
+</head>
+<body>
+
+    <div id="panel-teacher" class="container">
+        <h1>🌱 Shared Classroom Lesson Studio</h1>
+        <p class="subtitle">Design your course content. Create as many custom unit bundles as your school week requires!</p>
+
+        <div class="grade-config-box">
+            <div>
+                <label style="font-weight: bold;">Teacher's Name: </label>
+                <input type="text" id="teacher-name-input" class="config-input" style="width: 140px;" value="Cherry">
+            </div>
+            <div>
+                <label style="font-weight: bold;">Grade Level: </label>
+                <select id="grade-selector" class="grade-select" onchange="wipeQrFeedback()">
+                    <option value="Grade 3">Grade 3</option>
+                    <option value="Grade 4">Grade 4</option>
+                    <option value="Grade 5">Grade 5</option>
+                    <option value="Grade 6">Grade 6</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="dynamic-units-container"></div>
+
+        <button class="btn-global-builder" onclick="spawnNewUnitSection()">➕ Add New Unit Section</button>
+
+        <div class="unit-section" style="background: #f1f8e9; border: 2px dashed #4caf50;">
+            <div class="unit-title" style="color:#2e7d32; border-bottom-color:#4caf50;">🗣️ Phonics Sounds (Audio Only)</div>
+            <div id="phonics-box"></div>
+            <button class="btn-add" style="background:#4caf50; border-color:#388e3c;" onclick="addPhonicsTextRow('phonics-box', '')">+ Add Sound Entry</button>
+        </div>
+
+        <div class="save-zone">
+            <button class="btn-save" onclick="processAndGenerateQR()">💾 Save Content & Generate QR</button>
+            <div id="qr-grade-title" class="qr-grade-label"></div>
+            <div id="scan-text" class="scan-instructions">📸 Ready! Have students scan this QR code with their iPads:</div>
+            <div id="qr-display-box"></div>
+        </div>
+    </div>
+
+    <div id="panel-student" class="container" style="display: none;">
+        <h1 id="student-main-title" style="text-align: center;">🏡 Custom English Garden</h1>
+        <p class="subtitle">Tap an assignment pot below to begin today's activities!</p>
+
+        <div id="garden-hub" class="garden-container">
+            <div class="pot-card" onclick="startActivity(1)">
+                <h3>🪴 Pot 1: Review</h3>
+                <div class="pot-art"></div>
+                <p style="font-size:0.8rem; color:#795548;">Look at words and play audio tracks.</p>
+            </div>
+            <div class="pot-card" onclick="startActivity(2)">
+                <h3>🪴 Pot 2: Quiz</h3>
+                <div class="pot-art" style="background:#0288d1;"></div>
+                <p style="font-size:0.8rem; color:#795548;">Listen and match the correct word picture!</p>
+            </div>
+            <div class="pot-card" onclick="startActivity(3)">
+                <h3>🪴 Pot 3: Sentences</h3>
+                <div class="pot-art" style="background:#ff9800;"></div>
+                <p style="font-size:0.8rem; color:#795548;">Practice reading dynamic sentence sets.</p>
+            </div>
+            <div class="pot-card" onclick="startActivity(4)">
+                <h3>🪴 Pot 4: Phonics</h3>
+                <div class="pot-art" style="background:#fbc02d;"></div>
+                <p style="font-size:0.8rem; color:#795548;">Identify phonetic sound loops.</p>
+            </div>
+        </div>
+
+        <div id="student-activity-panel" style="display: none; margin-top: 20px;">
+            <button class="btn-add" style="background: #b0bec5;" onclick="backToHub()">⬅ Back to Garden</button>
+            <div id="activity-content" class="quiz-card"></div>
+        </div>
+    </div>
+
+    <script>
+        let uniqueUnitCounter = 0;
+        let activeLessonData = null;
+        let currentScore = 0;
+        let currentQuestion = 0;
+        let activeQuizPool = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            const urlDataParam = new URLSearchParams(window.location.search).get('lesson');
+            const urlLabelParam = new URLSearchParams(window.location.search).get('label');
+            
+            if (urlDataParam) {
+                document.getElementById('panel-teacher').style.display = 'none';
+                document.getElementById('panel-student').style.display = 'block';
+                if(urlLabelParam) {
+                    document.getElementById('student-main-title').innerText = `🏡 ${decodeURIComponent(urlLabelParam)}`;
+                }
+                try {
+                    activeLessonData = JSON.parse(decodeURIComponent(escape(atob(urlDataParam))));
+                } catch(e) {
+                    alert("Error unpacking data profiles.");
+                    activeLessonData = { units: [], phonics: [] };
+                }
+            } else {
+                document.getElementById('panel-teacher').style.display = 'block';
+                document.getElementById('panel-student').style.display = 'none';
+                
+                // Initialize default setup structure cleanly (Unit A & Unit B presets)
+                const preA = spawnNewUnitSection("Unit A");
+                addVisualInputRow(preA.vocabId, 'apple', '');
+                addVisualInputRow(preA.vocabId, 'banana', '');
+                addVisualInputRow(preA.sentenceId, 'I like apples.', '');
+                
+                const preB = spawnNewUnitSection("Unit B");
+                addVisualInputRow(preB.vocabId, 'cat', '');
+                addVisualInputRow(preB.vocabId, 'dog', '');
+                addVisualInputRow(preB.sentenceId, 'This is a big dog.', '');
+                
+                addPhonicsTextRow('phonics-box', 'sh');
+                addPhonicsTextRow('phonics-box', 'ch');
+            }
+        });
+
+        // Dynamic Generator for adding endless custom Vocabulary + Sentences matching blocks
+        function spawnNewUnitSection(defaultName = '') {
+            uniqueUnitCounter++;
+            const currentLetter = String.fromCharCode(64 + uniqueUnitCounter);
+            const unitTitleLabel = defaultName || `Unit ${currentLetter}`;
+            
+            const wrapper = document.getElementById('dynamic-units-container');
+            const masterBlock = document.createElement('div');
+            masterBlock.className = 'master-unit-wrapper';
+            
+            const vId = `vocab_cluster_${uniqueUnitCounter}`;
+            const sId = `sentence_cluster_${uniqueUnitCounter}`;
+
+            masterBlock.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <input type="text" class="config-input unit-identity-header" value="${unitTitleLabel}" style="font-size:1.2rem; width:180px; color:var(--earth-brown);">
+                    <button class="btn-add" style="background:#e57373; border-color:#ef5350;" onclick="this.parentElement.parentElement.remove(); wipeQrFeedback();">🗑️ Delete Bundle</button>
+                </div>
+                
+                <div class="unit-section">
+                    <div class="unit-title">🍄 Vocabulary Target List</div>
+                    <div id="${vId}"></div>
+                    <button class="btn-add" onclick="addVisualInputRow('${vId}', '', '')">+ Add Vocab Word</button>
+                </div>
+                
+                <div class="unit-section" style="background: #fff3e0; margin-bottom:0;">
+                    <div class="unit-title" style="color: #e65100; border-bottom-color: #ff9800;">📝 Sentences Part</div>
+                    <div id="${sId}"></div>
+                    <button class="btn-add" style="background: #ffb74d; border-color: #f57c00;" onclick="addVisualInputRow('${sId}', '', '')">+ Add Target Sentence</button>
+                </div>
+            `;
+            wrapper.appendChild(masterBlock);
+            return { vocabId: vId, sentenceId: sId };
+        }
+
+        // Builder for visual rows (Vocab & Sentences inputs)
+        function addVisualInputRow(boxId, textVal = '', imgDataUrl = '') {
+            const box = document.getElementById(boxId);
+            const div = document.createElement('div');
+            div.className = 'entry-row';
+            const inputId = 'file_' + Math.random().toString(36).substr(2, 9);
+
+            div.innerHTML = `
+                <input type="text" class="input-word vocab-text" value="${textVal}" placeholder="Type text here...">
+                <div class="image-paste-zone" tabindex="0" title="Click to browse or press Ctrl+V to paste an image">
+                    ${imgDataUrl ? `<img src="${imgDataUrl}">` : '📋 Click or Paste Image'}
+                </div>
+                <input type="file" id="${inputId}" class="hidden-file-input" accept="image/*">
+                <button class="btn-add" style="background:#e57373; border-color:#ef5350; padding:10px 14px; margin-bottom:0;" onclick="this.parentElement.remove()">×</button>
+            `;
+
+            const pasteZone = div.querySelector('.image-paste-zone');
+            const fileInput = div.querySelector('.hidden-file-input');
+
+            pasteZone.addEventListener('click', () => fileInput.click());
+            fileInput.addEventListener('change', (e) => {
+                if(e.target.files.length > 0) handleFileCompression(e.target.files[0], pasteZone);
+            });
+
+            pasteZone.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+                for (let i = 0; i < items.length; i++) {
+                    if (items[i].type.indexOf('image') !== -1) {
+                        handleFileCompression(items[i].getAsFile(), pasteZone);
+                        break;
+                    }
+                }
+            });
+            box.appendChild(div);
+        }
+
+        // Builder for phonics entries (Text Only)
+        function addPhonicsTextRow(boxId, soundVal = '') {
+            const box = document.getElementById(boxId);
+            const div = document.createElement('div');
+            div.className = 'entry-row';
+            div.innerHTML = `
+                <input type="text" class="input-phonics-only vocab-text" value="${soundVal}" placeholder="e.g. sh">
+                <button class="btn-add" style="background:#e57373; border-color:#ef5350; padding:10px 14px; margin-bottom:0;" onclick="this.parentElement.remove()">×</button>
+            `;
+            box.appendChild(div);
+        }
+
+        function handleFileCompression(file, visualZone) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width; let height = img.height;
+                    const max_size = 110; 
+                    
+                    if (width > height) {
+                        if (width > max_size) { height *= max_size / width; width = max_size; }
+                    } else {
+                        if (height > max_size) { width *= max_size / height; height = max_size; }
+                    }
+                    
+                    canvas.width = width; canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const optimizedDataUrl = canvas.toDataURL('image/jpeg', 0.45);
+                    visualZone.innerHTML = `<img src="${optimizedDataUrl}">`;
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function wipeQrFeedback() {
+            document.getElementById('qr-display-box').style.display = 'none';
+            document.getElementById('scan-text').style.display = 'none';
+            document.getElementById('qr-grade-title').style.display = 'none';
+        }
+
+        function collectRows(parentSelector) {
+            const rows = parentSelector.querySelectorAll('.entry-row');
+            const items = [];
+            rows.forEach(row => {
+                const txt = row.querySelector('.vocab-text').value.trim();
+                const imgTag = row.querySelector('.image-paste-zone img');
+                const imgData = imgTag ? imgTag.src : '';
+                if(txt) items.push({ word: txt, img: imgData });
+            });
+            return items;
+        }
+
+        function processAndGenerateQR() {
+            const teacherName = document.getElementById('teacher-name-input').value.trim() || "Teacher";
+            const currentGrade = document.getElementById('grade-selector').value;
+            const dynamicDisplayLabel = `${teacherName}'s Class - ${currentGrade}`;
+
+            // Aggregate data loops scanning down custom created elements
+            const unitWrappers = document.querySelectorAll('.master-unit-wrapper');
+            const packagePayload = { units: [], phonics: [] };
+
+            unitWrappers.forEach(block => {
+                const customLabel = block.querySelector('.unit-identity-header').value.trim() || "Unit";
+                const sections = block.querySelectorAll('.unit-section');
+                
+                const vocabData = collectRows(sections[0]);
+                const sentenceData = collectRows(sections[1]);
+
+                packagePayload.units.push({
+                    name: customLabel,
+                    vocab: vocabData,
+                    sentences: sentenceData
+                });
+            });
+
+            // Gather the phonics track
+            const phonicsRows = document.querySelectorAll('#phonics-box .entry-row');
+            phonicsRows.forEach(row => {
+                const sound = row.querySelector('.vocab-text').value.trim();
+                if(sound) packagePayload.phonics.push({ word: sound, img: '' });
+            });
+
+            const compressedPayload = btoa(unescape(encodeURIComponent(JSON.stringify(packagePayload))));
+            const studentLink = `${window.location.origin}${window.location.pathname}?label=${encodeURIComponent(dynamicDisplayLabel)}&lesson=${compressedPayload}`;
+
+            const qrBox = document.getElementById('qr-display-box');
+            qrBox.innerHTML = ''; qrBox.style.display = 'block';
+            
+            const labelBanner = document.getElementById('qr-grade-title');
+            labelBanner.innerText = `✨ Code Generated For: ${dynamicDisplayLabel} ✨`;
+            labelBanner.style.display = 'block';
+            document.getElementById('scan-text').style.display = 'block';
+
+            new QRCode(qrBox, {
+                text: studentLink,
+                width: 260, height: 260,
+                colorDark : "#000000", colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.L
+            });
+        }
+
+        function triggerVoice(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const speech = new SpeechSynthesisUtterance(text);
+                speech.lang = 'en-US';
+                speech.rate = 0.80;
+                window.speechSynthesis.speak(speech);
+            }
+        }
+
+        function startActivity(actType) {
+            document.getElementById('garden-hub').style.display = 'none';
+            document.getElementById('student-activity-panel').style.display = 'block';
+            const stage = document.getElementById('activity-content');
+            stage.innerHTML = '';
+
+            // Automatically merge list items from all dynamic units built by the teacher
+            let allWords = [];
+            let allSentences = [];
+            activeLessonData.units.forEach(u => {
+                allWords = allWords.concat(u.vocab);
+                allSentences = allSentences.concat(u.sentences);
+            });
+
+            if(actType === 1) {
+                stage.innerHTML = `<h2 style="margin-bottom:15px;">Visual Flashcard Review</h2>`;
+                const grid = document.createElement('div');
+                grid.className = 'flashcard-grid';
+                
+                allWords.forEach(item => {
+                    const card = document.createElement('button');
+                    card.className = 'img-choice-btn';
+                    card.style.width = '100%';
+                    if(item.img) card.innerHTML = `<img src="${item.img}" class="game-photo">`;
+                    card.innerHTML += `<strong>${item.word}</strong><br><span style="font-size:0.8rem; color:var(--accent-blue);">🔊 Listen</span>`;
+                    card.onclick = () => triggerVoice(item.word);
+                    grid.appendChild(card);
+                });
+                stage.appendChild(grid);
+            }
+            else if(actType === 3) {
+                stage.innerHTML = `<h2 style="margin-bottom:15px;">Sentence Practice Field</h2>`;
+                if(allSentences.length === 0) {
+                    stage.innerHTML += `<p>No sentence combinations loaded for this lesson package.</p>`;
+                    return;
+                }
+                allSentences.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'sentence-display-box';
+                    if(item.img) card.innerHTML = `<img src="${item.img}">`;
+                    card.innerHTML += `<span>${item.word}</span>`;
+                    
+                    const speakBtn = document.createElement('button');
+                    speakBtn.className = 'btn-add';
+                    speakBtn.style.background = 'var(--accent-blue)';
+                    speakBtn.style.borderColor = '#0288d1';
+                    speakBtn.innerText = '🔊 Speak Phrase';
+                    speakBtn.onclick = () => triggerVoice(item.word);
+                    card.appendChild(speakBtn);
+                    stage.appendChild(card);
+                });
+            }
+            else if(actType === 2 || actType === 4) {
+                currentScore = 0; currentQuestion = 0; activeQuizPool = [];
+                const pool = (actType === 2) ? allWords : activeLessonData.phonics;
+                
+                if(pool.length < 2) return alert("Please make sure this list category contains at least 2 entries to format questions!");
+
+                for(let i=0; i<Math.min(5, pool.length * 2); i++) {
+                    const correct = pool[Math.floor(Math.random() * pool.length)];
+                    let wrong = pool[Math.floor(Math.random() * pool.length)];
+                    while(wrong.word === correct.word) { wrong = pool[Math.floor(Math.random() * pool.length)]; }
+
+                    activeQuizPool.push({
+                        correct: correct,
+                        choices: [correct, wrong].sort(() => 0.5 - Math.random())
+                    });
+                }
+                runQuizLoop(actType === 4);
+            }
+        }
+
+        function runQuizLoop(isPhonicsMode = false) {
+            const stage = document.getElementById('activity-content');
+            stage.innerHTML = '';
+
+            if(currentQuestion >= activeQuizPool.length) {
+                stage.innerHTML = `
+                    <h2>🌸 Activity Cleared!</h2>
+                    <p style="font-size: 1.5rem; margin: 15px 0;">Score: ${currentScore} / ${activeQuizPool.length}</p>
+                    <button class="btn-save" style="box-shadow:none;" onclick="backToHub()">Return to Garden</button>
+                `;
+                return;
+            }
+
+            const item = activeQuizPool[currentQuestion];
+            stage.innerHTML = `
+                <h3>Question ${currentQuestion + 1} of ${activeQuizPool.length}</h3>
+                <button class="audio-btn" onclick="triggerVoice('${item.correct.word}')">🔊 Listen</button>
+                <h2 style="margin-bottom:15px;">${isPhonicsMode ? 'Choose the matching sound string:' : 'Find the matching targets:'}</h2>
+            `;
+            setTimeout(() => triggerVoice(item.correct.word), 300);
+
+            if (isPhonicsMode) {
+                item.choices.forEach(choice => {
+                    const b = document.createElement('button');
+                    b.className = 'option-btn';
+                    b.style.textAlign = 'center';
+                    b.style.fontWeight = 'bold';
+                    b.style.fontSize = '1.4rem';
+                    b.innerText = choice.word;
+                    b.onclick = () => {
+                        if(choice.word === item.correct.word) currentScore++;
+                        currentQuestion++;
+                        runQuizLoop(true);
+                    };
+                    stage.appendChild(b);
+                });
+            } else {
+                const grid = document.createElement('div');
+                grid.className = 'choice-grid';
+                item.choices.forEach(choice => {
+                    const b = document.createElement('button');
+                    b.className = 'img-choice-btn';
+                    if(choice.img) b.innerHTML = `<img src="${choice.img}"><br>`;
+                    b.innerHTML += `<strong>${choice.word}</strong>`;
+                    b.onclick = () => {
+                        if(choice.word === item.correct.word) currentScore++;
+                        currentQuestion++;
+                        runQuizLoop(false);
+                    };
+                    grid.appendChild(b);
+                });
+                stage.appendChild(grid);
+            }
+        }
+
+        function backToHub() {
+            window.speechSynthesis.cancel();
+            document.getElementById('student-activity-panel').style.display = 'none';
+            document.getElementById('garden-hub').style.display = 'flex';
+        }
+    </script>
+</body>
+</html>
